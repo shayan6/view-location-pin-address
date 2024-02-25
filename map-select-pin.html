@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <!-- ############################################ -->
+    <!-- bootstrap start -->
+    <!-- ############################################ -->
+    <link rel="stylesheet" href="https://bootswatch.com/4/materia/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css"
+        integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <!-- bootstrap end -->
+
+    <!-- ############################################ -->
+    <!-- leflet start -->
+    <!-- ############################################ -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
+    <link rel="stylesheet"
+        href="http://xguaita.github.io/Leaflet.MapCenterCoord/dist/L.Control.MapCenterCoord.min.css" />
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+    <script src="http://xguaita.github.io/Leaflet.MapCenterCoord/dist/L.Control.MapCenterCoord.min.js"></script>
+
+    <!-- location search css -->
+    <link rel="stylesheet" href="https://labs.easyblog.it/maps/leaflet-search/src/leaflet-search.css" />
+    <link rel="stylesheet" href="https://labs.easyblog.it/maps/leaflet-search/src/leaflet-search.mobile.css" />
+    <script src="https://labs.easyblog.it/maps/leaflet-search/src/leaflet-search.js"></script>
+    <!-- leaflet library end -->
+
+
+    <!-- ############################################ -->
+    <!-- page css -->
+    <!-- ############################################ -->
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Rubik&display=swap" rel="stylesheet">
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-family: 'Rubik', sans-serif;
+            font-weight: bold;
+        }
+
+        html,
+        body,
+        #map {
+            height: 100%;
+        }
+
+        .modal-header {
+            padding: 0;
+        }
+
+        .modal-header img {
+            vertical-align: middle;
+            border-style: none;
+            height: 50%;
+            width: 57%;
+            margin: auto;
+        }
+
+        .modal-footer,
+        .card-body {
+            justify-content: center;
+        }
+
+        .map-address-box {
+            position: absolute;
+            z-index: 1000;
+            bottom: 5%;
+            left: 15%;
+            width: 65%;
+        }
+        .leaflet-interactive{
+            display: none;
+        }
+        @media only screen and (max-width: 768px) {
+	        .map-address-box {
+	            left: 5%;
+	            width: 90%;
+	        }
+		}
+    </style>
+    <!-- page css end -->
+
+</head>
+
+<body>
+
+    <!-- creating map -->
+    <div id="map" class="map"></div>
+
+    <!-- map card -->
+    <div class="map-address-box">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title" style="color: #adb5bd;">Select Delivery Location</h6>
+                        <p class="card-text" id="address-description" style="font-size: 15px;"></p>
+                        <a href="#" class="btn btn-sm btn-primary" id="selectLoc"><i class="fa fa-check"
+                                style="margin-right: 10px;"></i>Select</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModalCenter" tabindex="-1" role="dialog"
+        aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <img src="https://static.wixstatic.com/media/af7358_b522e8e50b1a45818ffd1394fce65485~mv2.gif">
+                    <!-- <h5 class="modal-title" id="exampleModalLongTitle">Modal title</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button> -->
+                </div>
+                <div class="modal-body text-center">
+                    <h3> Let Us Know Where Your Delivery Location </h3>
+                </div>
+                <div class="modal-footer">
+                    <!-- <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button> -->
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Get Started</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        // get position promise ############################
+		var getPosition = function (options) {
+		  return new Promise(function (resolve, reject) {
+		    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+		  });
+		}
+
+        // ###################################################
+        // script for current lat long
+        // ###################################################
+        if (navigator.geolocation) {
+            // navigator.geolocation.getCurrentPosition(showPosition);
+			getPosition()
+			.then((position) => {
+				showPosition(position)
+			})
+			.catch((err) => {
+				console.error(err.message);
+				showPosition(null);
+			});
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
+
+
+        // ###################################################
+        // creating map at current location
+        // ###################################################
+        function showPosition(position) {
+
+			let lat = position ? (position.coords ? position.coords.latitude : position.latitude) : 25.2300583;
+			let lon = position ? (position.coords ? position.coords.longitude : position.longitude) : 55.286318;
+			lat = lat ? lat : 25.2300583;
+			lon = lon ? lon : 55.286318;
+
+            let map = L.map('map').setView([lat, lon], 18);
+
+            L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            L.control.mapCenterCoord().addTo(map);
+
+            // current location show on page 
+            writeLocation(lat, lon);
+
+            // getting location at start ########################
+            setTimeout(() => {
+                console.log(map.getCenter())
+                console.log($('#address-description').text())
+            }, 1000)
+            // getting location at start ########################
+
+            // search control leaflet
+            function formatJSON(rawjson) {	//callback that remap fields name
+                var json = {},
+                    key, loc, disp = [];
+
+                for (var i in rawjson) {
+                    disp = rawjson[i].display_name.split(',');
+                    key = disp[0] + ', ' + disp[1];
+                    loc = L.latLng(rawjson[i].lat, rawjson[i].lon);
+                    json[key] = loc;	//key,value format
+                }
+
+                return json;
+            }
+
+            var mobileOpts = {
+                url: 'http://nominatim.openstreetmap.org/search?format=json&q={s}',
+                jsonpParam: 'json_callback',
+                formatData: formatJSON,
+                textPlaceholder: 'Color...',
+                autoType: false,
+                tipAutoSubmit: true,
+                autoCollapse: false,
+                autoCollapseTime: 20000,
+                delayType: 800,	//with mobile device typing is more slow
+                // marker: {
+                //     icon: true
+                // }
+            };
+
+            map.addControl(new L.Control.Search(mobileOpts));
+
+            // leaflet search control end
+
+
+            // on map move event
+            map.on("moveend", function () {
+                let loc = map.getCenter();
+                writeLocation(loc.lat, loc.lng);
+                $('.map-address-box').slideDown();
+            });
+			
+			// map.on('zoomend', function() {
+   //              let loc = map.getCenter();
+   //              writeLocation(loc.lat, loc.lng);
+   //              $('.map-address-box').slideDown();
+		 //    });
+
+		 //    map.on('dragend', function() {
+   //              let loc = map.getCenter();
+   //              writeLocation(loc.lat, loc.lng);
+   //              $('.map-address-box').slideDown();
+		 //    });
+
+            // on map move start event
+            map.on("movestart", function () {
+                $('.map-address-box').slideUp();
+            });
+
+
+            // on select button click
+            $("#selectLoc").on("click", function () {
+                console.log(map.getCenter())
+                console.log($('#address-description').text())
+            });
+
+        }
+
+        // API to lat lon conversion in string
+        function writeLocation(lat, lon) {
+            $.get(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=es;q=0.8,de;q=0.4,en;q=0.2`, function (data) {
+                $('#address-description').html('<i class="fa fa-location-arrow"></i> ' + data.display_name);
+            });
+        }
+
+        // show modal at the start ##########################
+        $('#exampleModalCenter').modal('show'); 
+
+    </script>
+</body>
+
+</html>
